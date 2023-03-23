@@ -1,0 +1,19 @@
+{
+  "name": "backend_shoeshop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nguyentanhueqn123/backend_shoeshop.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nguyentanhueqn123/backend_shoeshop/issues"
+  },
+  "homepage": "https://github.com/nguyentanhueqn123/backend_shoeshop#readme"
+}
