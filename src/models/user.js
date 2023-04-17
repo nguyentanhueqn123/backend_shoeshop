@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     email:{
         type: String,
         required: true,
-        unique: true,
+        // unique: true,
     },
     nameAccount:{
         type: String,
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     },
     password:{
         type: String,
-        required: true,
+        // required: true,
     },
     phone:{
         type: String,
@@ -27,10 +27,13 @@ const userSchema = new mongoose.Schema({
         default: 'CUSTOMER',
     },
     cart:{
+        // type: String,
+
         type: [String],
         default:[]
     },
     createAt:{
+        // type: String,
         type:Date,
         required: true,
         default: Date.now

@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const morgan = require("morgan");
+const route = require('./src/routes/index');
 
 //Log web
 app.use(morgan("tiny"));
@@ -18,6 +19,7 @@ var cors = require("cors");
 app.use(cors());
 
 app.get("/", (req, res) => res.send("Hello from homepage"));
+route(app);
 
 
 mongoose
