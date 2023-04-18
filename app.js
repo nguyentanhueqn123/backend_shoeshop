@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const route = require('./src/routes/index');
+const db = require("./src/config/index");
 
 //Log web
 app.use(morgan("tiny"));
@@ -21,16 +22,7 @@ app.use(cors());
 app.get("/", (req, res) => res.send("Hello from homepage"));
 route(app);
 
-
-mongoose
-  .connect(process.env.conectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(function (result) {
-    console.log("Database is connected");
-  })
-  .catch((err) => console.log(err));
+db.connect();
 
 const PORT = process.env.PORT || 5000;
 var server = app.listen(PORT, function () {
