@@ -1,9 +1,7 @@
 const mongoose = require('mongoose')
-//ket noi phan mem voi mongodb qua string duoi
-const connectString = "mongodb+srv://shoeshop:shoeshop@cluster0.zuncuhq.mongodb.net/?retryWrites=true&w=majority"
 
 const connect = async () =>{
-    mongoose.connect(connectString, {
+    mongoose.connect(process.env.conectionString, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     })
