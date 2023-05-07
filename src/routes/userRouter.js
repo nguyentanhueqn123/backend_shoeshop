@@ -11,11 +11,8 @@ router.get('/:id',userController.getOneUser)
 
 router.get('/getStaff',userController.getStaff)
 
-router.post('/login', userController.Login)
-router.post('/register', userController.Register)
-
-router.get('/hue', userController.Hue)
-
+router.post('/login',userController.Login)
+router.post('/register',userController.Register)
 router.patch('/changeAdmin/:id',userController.changeRoleAdmin)
 router.patch('/changeCustomer/:id',userController.changeRoleCustomer)
 router.delete('/:id',userController.deleteUserFromId)

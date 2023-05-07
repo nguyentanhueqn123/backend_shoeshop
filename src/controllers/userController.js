@@ -161,18 +161,6 @@ class UserController {
         }
     }
 
-    async Hue(req, res){
-        return res.status(200).json([
-            {
-                id: "1",
-                name: "meo"
-            },
-            {
-                id: "2",
-                name: "meo hoang thuong"
-            }
-        ])
-    }
     async getStaff(req,res){
         let query ={ ...req.query, "role": {$ne: 'CUSTOMER' }}
         if (req.query.role) {
