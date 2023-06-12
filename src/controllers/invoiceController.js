@@ -122,37 +122,67 @@ class InvoiceController {
         }
     }
    
+    // async addInvoice(req, res) {
+    //     const invoices = await new invoiceSchema({
+    //         productId: req.body.productId,
+    //         userId: req.body.userId,
+    //         phone: req.body.phone ,
+    //         address: req.body.address,
+    //         cost: req.body.cost,
+    //         paymemtMethod: req.body.paymemtMethod,
+    //         status: req.body.status,
+    //         amount: req.body.amount
+    //     })
+    //     try {
+    //         const temp = await invoices.save()
+    //         res.json(temp)
+    //     } catch (err) {
+    //         res.send('Error' + err)
+    //     }
+    // }
     async addInvoice(req, res) {
-        const invoices = await new invoiceSchema({
-            productId: req.body.productId,
+        const invoice = new invoiceSchema({
             userId: req.body.userId,
-            phone: req.body.phone ,
+            product: req.body.product,
+            phone: req.body.phone,
             address: req.body.address,
             cost: req.body.cost,
             paymemtMethod: req.body.paymemtMethod,
             status: req.body.status,
             amount: req.body.amount
-        })
+        });
         try {
-            const temp = await invoices.save()
-            res.json(temp)
+            const temp = await invoice.save();
+            res.json(temp);
         } catch (err) {
-            res.send('Error' + err)
+            res.send('Error' + err);
         }
     }
-
-        async addProduct(req,res){
+    async addProduct(req,res){
         const product = req.body.productId
         const _id = req.params.id
         try {
             const invoice = await invoiceSchema.findById(_id)
-            invoice.productId.push(product)
+            invoice.product.push(product)
             invoice.save()
             res.send(invoice)
         } catch (error) {
             throw new Error(error)
         }
     }
+
+    // async addProduct(req,res){
+    //     const product = req.body.productId
+    //     const _id = req.params.id
+    //     try {
+    //         const invoice = await invoiceSchema.findById(_id)
+    //         invoice.productId.push(product)
+    //         invoice.save()
+    //         res.send(invoice)
+    //     } catch (error) {
+    //         throw new Error(error)
+    //     }
+    // }
 
 
     async deleteProduct(req,res){
