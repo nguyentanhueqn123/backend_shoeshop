@@ -36,7 +36,7 @@ const invoiceSchema = new mongoose.Schema({
     paymentMethod:{
         type:String,
         enum:['COD','CARD'],
-        default:'CARD',
+        default:'COD',
     },
     status:{
         type:String,
