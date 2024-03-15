@@ -7,7 +7,7 @@ class QuestionCotroller {
         try {
             const question = await questionSchema.find().populate({
                 path:'userId',
-                select:'nameAccount'
+                select:'nameAccount image'
             },)
             res.send(question)
         }
@@ -57,7 +57,7 @@ class QuestionCotroller {
             const _id = req.params.id;
             const findQuestion = await questionSchema.find({ "productId": _id }).populate({
                 path: 'userId',
-                select: 'nameAccount'
+                select: 'nameAccount image'
             })
             res.send(findQuestion)
         } catch (err) {

@@ -41,7 +41,7 @@ class commentController{
         const findComment = await commentSchema.find({"productId": _id })
         .populate({
         path: 'userId',
-        select: 'nameAccount'},
+        select: 'nameAccount image'},
         )
         res.send(findComment)
         }catch(err){
