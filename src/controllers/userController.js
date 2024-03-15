@@ -279,6 +279,25 @@ class UserController {
             throw new Error(err)
         }
     }
+
+
+    async ChangeInfor(req, res) {
+        const _id = req.params.id;
+        const { nameAccount, email, phone, image } = req.body;
+        try {
+            const updatedUser = await userModel.findByIdAndUpdate(
+                _id,
+                { nameAccount, email, phone, image },
+                { new: true } // Trả về đối tượng sau khi đã được cập nhật
+            );
+            if (!updatedUser) {
+                return res.status(404).json({ success: false, message: 'User not found' });
+            }
+            res.json({ success: true, message: 'User information updated successfully', user: updatedUser });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+        }
+    }
   
 }
 

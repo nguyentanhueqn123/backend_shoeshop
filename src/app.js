@@ -9,7 +9,7 @@ const db = require('./config/index')
 const app = express();
 
 //Su dung port 5000
-const PORT = 8000;
+const PORT = 8010;
 
 app.use(express.urlencoded({
     extended: true

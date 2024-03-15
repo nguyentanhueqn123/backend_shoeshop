@@ -20,6 +20,8 @@ router.patch('/changeAdmin/:id',userController.changeRoleAdmin)
 router.patch('/changeCustomer/:id',userController.changeRoleCustomer)
 router.delete('/:id',userController.deleteUserFromId)
 
+router.patch('/changeInfor/:id', userController.ChangeInfor)
+
 router.post('/cart/:id',userController.addCart)
 router.delete('/cart/:id',userController.deleteCart)
 
