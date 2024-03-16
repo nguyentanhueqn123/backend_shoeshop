@@ -250,6 +250,21 @@ class ProductController {
         }
     }
 
+    async compareProducts(req, res) {
+        try {
+            const { id1, id2 } = req.params; 
+            const product1 = await productSchema.findById(id1);
+            const product2 = await productSchema.findById(id2);
+    
+            if (!product1 || !product2) {
+                return res.status(404).send({ message: 'One or both products not found' });
+            }
+    
+            res.send({ product1, product2 });
+        } catch (error) {
+            res.status(500).send({ message: error.message });
+        }
+    }
 
 }
 

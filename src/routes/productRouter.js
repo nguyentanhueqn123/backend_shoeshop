@@ -17,6 +17,8 @@ router.patch('/:id',productController.setProduct)
 router.delete('/:id',productController.deleteProductById)
 router.delete('/type/:id',productController.deleteTypeProductById)
 
+router.get('/compare/:id1/:id2', productController.compareProducts);
+
 
 
 
