@@ -28,11 +28,14 @@ class QuestionCotroller {
             res.send('Error' + err)
         }
     }
-
+    
     async setQuestion(req,res){
         try{
             const _id = req.params.id;
-            const updateField = await questionSchema.findByIdAndUpdate(_id,req.body)
+            const updateField = await questionSchema.findByIdAndUpdate(_id, {
+                ...req.body,
+                answerDate: Date.now() // Thêm trường answerDate với giá trị là thời gian hiện tại
+            })
             res.send(updateField)
         }
         catch(err)
