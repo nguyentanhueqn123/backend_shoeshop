@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-//model cua 1 user trong collection users cua mongodb
 const invoiceSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,

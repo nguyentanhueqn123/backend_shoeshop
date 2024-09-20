@@ -1,6 +1,4 @@
 const commentSchema = require('../models/comments');
-const User = require('../models/user');
-const Product = require('../models/products');
 class commentController {
   async getAllComment(req, res, next) {
     try {

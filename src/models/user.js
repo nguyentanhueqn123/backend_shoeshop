@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const bson = require('bson');
-//model cua 1 user trong collection users cua mongodb
 const userSchema = new mongoose.Schema({
   email: {
     type: String,

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const typeProductSchema = require('./typeProducts');
 
 const productSchema = new mongoose.Schema({
   nameProduct: {

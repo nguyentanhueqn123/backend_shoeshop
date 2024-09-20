@@ -1,4 +1,3 @@
-const { query, response } = require('express');
 const productSchema = require('../models/products');
 const typeProductSchema = require('../models/typeProducts');
 

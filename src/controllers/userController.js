@@ -1,7 +1,7 @@
 const userModel = require('../models/user');
 const argon2 = require('argon2');
-const jwt = require('jsonwebtoken');
-const user = require('../models/user');
+// const jwt = require('jsonwebtoken')
+// const user = require('../models/user')
 class UserController {
   /*
     //Ham lay du lieu tu database

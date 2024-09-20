@@ -1,7 +1,5 @@
 const invoiceSchema = require('../models/invoice');
 const userSchema = require('../models/user');
-const productSchema = require('../models/products');
-const invoice = require('../models/invoice');
 class InvoiceController {
   async getCount(req, res) {
     try {

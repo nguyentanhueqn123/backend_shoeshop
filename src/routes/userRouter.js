@@ -3,7 +3,6 @@ const router = express.Router();
 const verifyToken = require('../middleware/auth');
 const userController = require('../controllers/userController');
 
-//o day chuyen den router de get va post data trong mongo
 router.get('/verify', verifyToken, userController.getUser);
 router.get('/userRole', userController.getUserRole);
 router.get('/customers', userController.getAllCustomers);
