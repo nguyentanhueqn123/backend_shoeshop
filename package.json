@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "lint:fix": "eslint . --fix"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +23,10 @@
     "short-id": "^0.1.0-1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "nodemon": "^2.0.15",
+    "prettier": "^3.3.3"
   }
 }

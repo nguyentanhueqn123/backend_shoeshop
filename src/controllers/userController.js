@@ -1,11 +1,9 @@
-const userModel = require('../models/user')
-const argon2 = require('argon2')
-const jwt = require('jsonwebtoken')
-const user = require('../models/user')
+const userModel = require('../models/user');
+const argon2 = require('argon2');
+const jwt = require('jsonwebtoken');
+const user = require('../models/user');
 class UserController {
-
-
-    /*
+  /*
     //Ham lay du lieu tu database
     async getAllUser(req, res, next) {
         try {
@@ -34,271 +32,273 @@ class UserController {
 
     */
 
+  async getUser(req, res) {
+    try {
+      const user = await userModel.findById(req.userId).select('-password');
+      if (!user)
+        return res
+          .status(400)
+          .json({ success: false, message: 'User not found' });
+      res.json({ success: true, user });
+    } catch (error) {
+      throw new Error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
 
-
-    async getUser(req, res) {
-        try {
-            const user = await userModel.findById(req.userId).select('-password')
-            if (!user)
-                return res.status(400).json({ success: false, message: 'User not found' })
-            res.json({ success: true, user })
-        } catch (error) {
-            throw new Error(error)
-            res.status(500).json({ success: false, message: 'Internal server error' })
-        }
+  async getAllUser(req, res, next) {
+    let query = req.query;
+    if (req.query.role) {
+      query.role = req.query.role.toUpperCase().split(',');
     }
 
-
-    async getAllUser(req, res, next) {
-
-        let query = req.query
-        if (req.query.role) {
-            query.role = req.query.role.toUpperCase().split(',')
-        }
-
-        if (req.query.textSearch) {
-            query.nameAccount = {
-                $regex: req.query.textSearch
-            }
-        }
-        
-        try {
-            const user = await userModel.find(query)
-            res.send(user)
-        }
-        catch (err) {
-            res.send({ message: err.message })
-        }
+    if (req.query.textSearch) {
+      query.nameAccount = {
+        $regex: req.query.textSearch,
+      };
     }
 
+    try {
+      const user = await userModel.find(query);
+      res.send(user);
+    } catch (err) {
+      res.send({ message: err.message });
+    }
+  }
 
-    async Register(req, res) {
-        const { email, password ,nameAccount,phone,role} = req.body
+  async Register(req, res) {
+    const { email, password, nameAccount, phone, role } = req.body;
 
-        // Simple validation
-        if (!email || !password) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Missing email and/or password' })
-        }
+    // Simple validation
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Missing email and/or password' });
+    }
 
-        try {
-            // Check for existing user
-            const user = await userModel.findOne({ email })
+    try {
+      // Check for existing user
+      const user = await userModel.findOne({ email });
 
-            if (user) {
-                return res
-                    .status(400)
-                    .json({ success: false, message: 'email already taken' })
-            }
+      if (user) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'email already taken' });
+      }
 
-            // All good
-            const hashedPassword = await argon2.hash(password)
-            const newUser = new userModel({ email, password: hashedPassword,nameAccount,phone,role })
-            await newUser.save()
+      // All good
+      const hashedPassword = await argon2.hash(password);
+      const newUser = new userModel({
+        email,
+        password: hashedPassword,
+        nameAccount,
+        phone,
+        role,
+      });
+      await newUser.save();
 
-            console.log( process.env.ACCESS_TOKEN_SECRET);
-            // Return token
-           /* const accessToken = jwt.sign(
+      console.log(process.env.ACCESS_TOKEN_SECRET);
+      // Return token
+      /* const accessToken = jwt.sign(
                 { userId: newUser._id },
                 process.env.ACCESS_TOKEN_SECRET
             )
 */
-            res.json({
-                success: true,
-                message: 'User created successfully',
-              //  accessToken
-            })
-        } catch (error) {
-            throw new Error(error)
-            res.status(500).json({ success: false, message: 'Internal server error' })
-        }
+      res.json({
+        success: true,
+        message: 'User created successfully',
+        //  accessToken
+      });
+    } catch (error) {
+      throw new Error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
     }
+  }
 
+  async Login(req, res) {
+    const { email, password } = req.body;
 
+    // Simple validation
+    if (!email || !password)
+      return res
+        .status(400)
+        .json({ success: false, message: 'Missing username and/or password' });
 
+    try {
+      // Check for existing user
+      const user = await userModel.findOne({ email });
+      if (!user)
+        return res
+          .status(400)
+          .json({ success: false, message: 'Incorrect username or password' });
 
-    async Login(req, res) {
-        const { email, password } = req.body
+      // Username found
+      const passwordValid = await argon2.verify(user.password, password);
+      if (!passwordValid)
+        return res
+          .status(400)
+          .json({ success: false, message: 'Incorrect username or password' });
 
-        // Simple validation
-        if (!email || !password)
-            return res
-                .status(400)
-                .json({ success: false, message: 'Missing username and/or password' })
-
-        try {
-            // Check for existing user
-            const user = await userModel.findOne({ email })
-            if (!user)
-                return res
-                    .status(400)
-                    .json({ success: false, message: 'Incorrect username or password' })
-
-            // Username found
-            const passwordValid = await argon2.verify(user.password, password)
-            if (!passwordValid)
-                return res
-                    .status(400)
-                    .json({ success: false, message: 'Incorrect username or password' })
-
-            // All good
-            // Return token
-           /* const accessToken = jwt.sign(
+      // All good
+      // Return token
+      /* const accessToken = jwt.sign(
                 { userId: user._id },
                 process.env.ACCESS_TOKEN_SECRET
             )*/
 
-            res.json({
-                user,
-                success: true,
-                message: 'User logged in successfully',
-               // accessToken
-            })
-        } catch (error) {
-            throw new Error(error)
-            res.status(500).json({ success: false, message: 'Internal server error' })
-        }
+      res.json({
+        user,
+        success: true,
+        message: 'User logged in successfully',
+        // accessToken
+      });
+    } catch (error) {
+      throw new Error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async getStaff(req, res) {
+    let query = { ...req.query, role: { $ne: 'CUSTOMER' } };
+    if (req.query.role) {
+      query.role = req.query.role.toUpperCase();
     }
 
-    async getStaff(req,res){
-        let query ={ ...req.query, "role": {$ne: 'CUSTOMER' }}
-        if (req.query.role) {
-            query.role = req.query.role.toUpperCase()
-        }
-
-        if (req.query.textSearch) {
-            query.nameAccount = {
-                $regex: req.query.textSearch
-            }
-        }
-
-        try {
-            const findRole = await userModel.find(query)
-            res.send(findRole)
-        } catch (error) {
-            throw new Error(error)
-        }
-
+    if (req.query.textSearch) {
+      query.nameAccount = {
+        $regex: req.query.textSearch,
+      };
     }
 
-    async getUserRole(req,res){
-        try {
-            const findRole = await userModel.find(req.query)
-            res.send(findRole)
-        } catch (error) {
-            throw new Error(error)
-        }
+    try {
+      const findRole = await userModel.find(query);
+      res.send(findRole);
+    } catch (error) {
+      throw new Error(error);
     }
+  }
 
-
-
-
-    async changeRoleAdmin(req,res) {
-        try{
-            const _id = req.params.id;
-            const update = await userModel.findByIdAndUpdate(_id,{"role": 'ADMIN'})
-            res.send(update)
-        }
-        catch(err)
-        {
-            res.send('error' + err)
-        }
+  async getUserRole(req, res) {
+    try {
+      const findRole = await userModel.find(req.query);
+      res.send(findRole);
+    } catch (error) {
+      throw new Error(error);
     }
+  }
 
-
-
-    async changeRoleCustomer(req,res) {
-        try{
-            const _id = req.params.id;
-            const update = await userModel.findByIdAndUpdate(_id,{"role": 'CUSTOMER'})
-            res.send(update)
-        }
-        catch(err)
-        {
-            res.send('error' + err)
-        }
+  async changeRoleAdmin(req, res) {
+    try {
+      const _id = req.params.id;
+      const update = await userModel.findByIdAndUpdate(_id, { role: 'ADMIN' });
+      res.send(update);
+    } catch (err) {
+      res.send('error' + err);
     }
+  }
 
-    async deleteUserFromId(req,res){
-        const _id = req.params.id
-        try{
-        const user = await userModel.findByIdAndDelete(_id)
-        res.send(user)
-        }catch(err)
-        {
-            throw new Error(err)
-        }
+  async changeRoleCustomer(req, res) {
+    try {
+      const _id = req.params.id;
+      const update = await userModel.findByIdAndUpdate(_id, {
+        role: 'CUSTOMER',
+      });
+      res.send(update);
+    } catch (err) {
+      res.send('error' + err);
     }
+  }
 
-    async getAllCustomers(req, res) {
-        try {
-            const customers = await userModel.find({ role: 'CUSTOMER'})
-            res.send(customers)
-        }
-        catch (error) {
-            throw new Error(error)
-        }
+  async deleteUserFromId(req, res) {
+    const _id = req.params.id;
+    try {
+      const user = await userModel.findByIdAndDelete(_id);
+      res.send(user);
+    } catch (err) {
+      throw new Error(err);
     }
+  }
 
-
-    async addCart(req,res){
-        const product = req.body.productId
-        const _id = req.params.id
-        try {
-            const user = await userModel.findById(_id)
-            user.cart.push(product)
-            user.save()
-            res.send(user)
-        } catch (error) {
-            throw new Error(error)
-            console.log(cart1)
-        }
+  async getAllCustomers(req, res) {
+    try {
+      const customers = await userModel.find({ role: 'CUSTOMER' });
+      res.send(customers);
+    } catch (error) {
+      throw new Error(error);
     }
+  }
 
-    async deleteCart(req,res){
-        try{
-        const user = await userModel.findByIdAndUpdate(
-            {_id:req.params.id},
-            {$pull:{cart: req.body.productId}}
-        )
-        res.send(user)
-        }catch(err)
-        {
-            throw new Error(err)
-        }
+  async addCart(req, res) {
+    const product = req.body.productId;
+    const _id = req.params.id;
+    try {
+      const user = await userModel.findById(_id);
+      user.cart.push(product);
+      user.save();
+      res.send(user);
+    } catch (error) {
+      throw new Error(error);
+      console.log(cart1);
     }
+  }
 
-    async getOneUser(req,res){
-        const _id = req.params.id
-        try{
-        const user = await userModel.findById(_id)
-        res.send(user)
-        }catch(err)
-        {
-            throw new Error(err)
-        }
+  async deleteCart(req, res) {
+    try {
+      const user = await userModel.findByIdAndUpdate(
+        { _id: req.params.id },
+        { $pull: { cart: req.body.productId } }
+      );
+      res.send(user);
+    } catch (err) {
+      throw new Error(err);
     }
+  }
 
-
-    async ChangeInfor(req, res) {
-        const _id = req.params.id;
-        const { nameAccount, email, phone, image } = req.body;
-        try {
-            const updatedUser = await userModel.findByIdAndUpdate(
-                _id,
-                { nameAccount, email, phone, image },
-                { new: true } // Trả về đối tượng sau khi đã được cập nhật
-            );
-            if (!updatedUser) {
-                return res.status(404).json({ success: false, message: 'User not found' });
-            }
-            res.json({ success: true, message: 'User information updated successfully', user: updatedUser });
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
-        }
+  async getOneUser(req, res) {
+    const _id = req.params.id;
+    try {
+      const user = await userModel.findById(_id);
+      res.send(user);
+    } catch (err) {
+      throw new Error(err);
     }
-  
+  }
+
+  async ChangeInfor(req, res) {
+    const _id = req.params.id;
+    const { nameAccount, email, phone, image } = req.body;
+    try {
+      const updatedUser = await userModel.findByIdAndUpdate(
+        _id,
+        { nameAccount, email, phone, image },
+        { new: true } // Trả về đối tượng sau khi đã được cập nhật
+      );
+      if (!updatedUser) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      res.json({
+        success: true,
+        message: 'User information updated successfully',
+        user: updatedUser,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: 'Internal server error',
+          error: error.message,
+        });
+    }
+  }
 }
 
-module.exports = new UserController
+module.exports = new UserController();
