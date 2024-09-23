@@ -1,77 +1,11 @@
 const userModel = require('../models/user');
 const argon2 = require('argon2');
-// const jwt = require('jsonwebtoken')
-// const user = require('../models/user')
+const jwt = require('jsonwebtoken');
+
 class UserController {
-  /*
-    //Ham lay du lieu tu database
-    async getAllUser(req, res, next) {
-        try {
-            const user = await userModel.find()
-            res.send(user)
-        }
-        catch (err) {
-            res.send({ message: err.message })
-        }
-    }
-    // Ham them user vao database, trong do chi can them username vs password la dc, isTeacher va isSelect tu dong la false
-    async addUser(req, res) {
-        const user = await new userModel({
-            nameAccount: req.body.nameAccount,
-            email: req.body.email,
-            password: req.body.password,
-            phone: req.body.phone,
-        })
-        try {
-            const temp = await user.save()
-            res.json(temp)
-        } catch (err) {
-            res.send('Error' + err)
-        }
-    }
-
-    */
-
-  async getUser(req, res) {
-    try {
-      const user = await userModel.findById(req.userId).select('-password');
-      if (!user)
-        return res
-          .status(400)
-          .json({ success: false, message: 'User not found' });
-      res.json({ success: true, user });
-    } catch (error) {
-      throw new Error(error);
-      res
-        .status(500)
-        .json({ success: false, message: 'Internal server error' });
-    }
-  }
-
-  async getAllUser(req, res, next) {
-    let query = req.query;
-    if (req.query.role) {
-      query.role = req.query.role.toUpperCase().split(',');
-    }
-
-    if (req.query.textSearch) {
-      query.nameAccount = {
-        $regex: req.query.textSearch,
-      };
-    }
-
-    try {
-      const user = await userModel.find(query);
-      res.send(user);
-    } catch (err) {
-      res.send({ message: err.message });
-    }
-  }
-
-  async Register(req, res) {
+  async register(req, res) {
     const { email, password, nameAccount, phone, role } = req.body;
 
-    // Simple validation
     if (!email || !password) {
       return res
         .status(400)
@@ -79,16 +13,13 @@ class UserController {
     }
 
     try {
-      // Check for existing user
-      const user = await userModel.findOne({ email });
-
-      if (user) {
+      const existingUser = await userModel.findOne({ email });
+      if (existingUser) {
         return res
           .status(400)
-          .json({ success: false, message: 'email already taken' });
+          .json({ success: false, message: 'Email already taken' });
       }
 
-      // All good
       const hashedPassword = await argon2.hash(password);
       const newUser = new userModel({
         email,
@@ -99,65 +30,89 @@ class UserController {
       });
       await newUser.save();
 
-      console.log(process.env.ACCESS_TOKEN_SECRET);
-      // Return token
-      /* const accessToken = jwt.sign(
-                { userId: newUser._id },
-                process.env.ACCESS_TOKEN_SECRET
-            )
-*/
-      res.json({
-        success: true,
-        message: 'User created successfully',
-        //  accessToken
-      });
+      res
+        .status(201)
+        .json({ success: true, message: 'User created successfully' });
     } catch (error) {
-      throw new Error(error);
+      console.error(error);
       res
         .status(500)
         .json({ success: false, message: 'Internal server error' });
     }
   }
 
-  async Login(req, res) {
+  async login(req, res) {
     const { email, password } = req.body;
 
-    // Simple validation
-    if (!email || !password)
+    if (!email || !password) {
       return res
         .status(400)
-        .json({ success: false, message: 'Missing username and/or password' });
+        .json({ success: false, message: 'Missing email and/or password' });
+    }
 
     try {
-      // Check for existing user
       const user = await userModel.findOne({ email });
-      if (!user)
+      if (!user || !(await argon2.verify(user.password, password))) {
         return res
           .status(400)
-          .json({ success: false, message: 'Incorrect username or password' });
+          .json({ success: false, message: 'Incorrect email or password' });
+      }
 
-      // Username found
-      const passwordValid = await argon2.verify(user.password, password);
-      if (!passwordValid)
-        return res
-          .status(400)
-          .json({ success: false, message: 'Incorrect username or password' });
+      const accessToken = jwt.sign(
+        { userId: user._id },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: '15m' }
+      );
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
 
-      // All good
-      // Return token
-      /* const accessToken = jwt.sign(
-                { userId: user._id },
-                process.env.ACCESS_TOKEN_SECRET
-            )*/
+      const userWithoutPassword = user.toObject();
+      delete userWithoutPassword.password;
 
       res.json({
-        user,
         success: true,
         message: 'User logged in successfully',
-        // accessToken
+        user: userWithoutPassword,
+        tokens: { access_token: accessToken, refresh_token: refreshToken },
       });
     } catch (error) {
-      throw new Error(error);
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async getAllUser(req, res) {
+    try {
+      let query = {};
+      if (req.query.role) {
+        query.role = { $in: req.query.role.toUpperCase().split(',') };
+      }
+      if (req.query.textSearch) {
+        query.nameAccount = { $regex: req.query.textSearch, $options: 'i' };
+      }
+      const users = await userModel.find(query).select('-password');
+      res.json(users);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async getAllCustomers(req, res) {
+    try {
+      const customers = await userModel
+        .find({ role: 'CUSTOMER' })
+        .select('-password -cart');
+      res.status(200).json(customers);
+    } catch (error) {
+      console.error(error);
       res
         .status(500)
         .json({ success: false, message: 'Internal server error' });
@@ -165,112 +120,55 @@ class UserController {
   }
 
   async getStaff(req, res) {
-    let query = { ...req.query, role: { $ne: 'CUSTOMER' } };
-    if (req.query.role) {
-      query.role = req.query.role.toUpperCase();
-    }
-
-    if (req.query.textSearch) {
-      query.nameAccount = {
-        $regex: req.query.textSearch,
-      };
-    }
-
     try {
-      const findRole = await userModel.find(query);
-      res.send(findRole);
+      let query = { role: { $nin: ['CUSTOMER', 'ADMIN'] } };
+      if (req.query.role) {
+        query.role = req.query.role.toUpperCase();
+      }
+      if (req.query.textSearch) {
+        query.nameAccount = { $regex: req.query.textSearch, $options: 'i' };
+      }
+      const staff = await userModel.find(query).select('-password -cart');
+      res.status(200).json(staff);
     } catch (error) {
-      throw new Error(error);
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async getOneUser(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await userModel.findById(id);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
     }
   }
 
   async getUserRole(req, res) {
     try {
       const findRole = await userModel.find(req.query);
-      res.send(findRole);
+      res.json(findRole);
     } catch (error) {
-      throw new Error(error);
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
     }
   }
 
-  async changeRoleAdmin(req, res) {
-    try {
-      const _id = req.params.id;
-      const update = await userModel.findByIdAndUpdate(_id, { role: 'ADMIN' });
-      res.send(update);
-    } catch (err) {
-      res.send('error' + err);
-    }
-  }
-
-  async changeRoleCustomer(req, res) {
-    try {
-      const _id = req.params.id;
-      const update = await userModel.findByIdAndUpdate(_id, {
-        role: 'CUSTOMER',
-      });
-      res.send(update);
-    } catch (err) {
-      res.send('error' + err);
-    }
-  }
-
-  async deleteUserFromId(req, res) {
-    const _id = req.params.id;
-    try {
-      const user = await userModel.findByIdAndDelete(_id);
-      res.send(user);
-    } catch (err) {
-      throw new Error(err);
-    }
-  }
-
-  async getAllCustomers(req, res) {
-    try {
-      const customers = await userModel.find({ role: 'CUSTOMER' });
-      res.send(customers);
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
-  async addCart(req, res) {
-    const product = req.body.productId;
-    const _id = req.params.id;
-    try {
-      const user = await userModel.findById(_id);
-      user.cart.push(product);
-      user.save();
-      res.send(user);
-    } catch (error) {
-      throw new Error(error);
-      console.log(cart1);
-    }
-  }
-
-  async deleteCart(req, res) {
-    try {
-      const user = await userModel.findByIdAndUpdate(
-        { _id: req.params.id },
-        { $pull: { cart: req.body.productId } }
-      );
-      res.send(user);
-    } catch (err) {
-      throw new Error(err);
-    }
-  }
-
-  async getOneUser(req, res) {
-    const _id = req.params.id;
-    try {
-      const user = await userModel.findById(_id);
-      res.send(user);
-    } catch (err) {
-      throw new Error(err);
-    }
-  }
-
-  async ChangeInfor(req, res) {
+  async changeInfo(req, res) {
     const _id = req.params.id;
     const { nameAccount, email, phone, image } = req.body;
     try {
@@ -290,13 +188,81 @@ class UserController {
         user: updatedUser,
       });
     } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
+    }
+  }
+
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await userModel.findByIdAndDelete(id);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      res.status(200).json({
+        success: true,
+        message: 'User deleted successfully',
+        data: {
+          id: user._id,
+          nameAccount: user.nameAccount,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      console.error(error);
       res
         .status(500)
-        .json({
-          success: false,
-          message: 'Internal server error',
-          error: error.message,
-        });
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async addToCart(req, res) {
+    try {
+      const { id } = req.params;
+      const { productId } = req.body;
+      const user = await userModel.findById(id);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      user.cart.push(productId);
+      await user.save();
+      res.status(200).json({ success: true, cart: user.cart });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async removeFromCart(req, res) {
+    try {
+      const { id } = req.params;
+      const { productId } = req.body;
+      const user = await userModel.findByIdAndUpdate(
+        id,
+        { $pull: { cart: productId } },
+        { new: true }
+      );
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      res.status(200).json({ success: true, cart: user.cart });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
     }
   }
 }

@@ -36,7 +36,9 @@ app.use(cors());
 
 // Route setup
 route(app);
-
+app.get('/', (req, res) => {
+  res.send('Welcome to backend server!');
+});
 app.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 db.connect();

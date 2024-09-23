@@ -1,25 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const verifyToken = require('../middleware/auth');
+// const verifyToken = require('../middleware/auth');
 const userController = require('../controllers/userController');
 
-router.get('/verify', verifyToken, userController.getUser);
-router.get('/userRole', userController.getUserRole);
-router.get('/customers', userController.getAllCustomers);
-router.get('/getStaff', userController.getStaff);
-
+router.post('/register', userController.register);
+router.post('/login', userController.login);
+// Protected routes
+// router.use(verifyToken);
 router.get('/', userController.getAllUser);
+router.get('/customers', userController.getAllCustomers);
+router.get('/staff', userController.getStaff);
 router.get('/:id', userController.getOneUser);
+router.patch('/changeInfor/:id', userController.changeInfo);
+router.delete('/:id', userController.deleteUser);
 
-router.post('/login', userController.Login);
-router.post('/register', userController.Register);
-router.patch('/changeAdmin/:id', userController.changeRoleAdmin);
-router.patch('/changeCustomer/:id', userController.changeRoleCustomer);
-router.delete('/:id', userController.deleteUserFromId);
-
-router.patch('/changeInfor/:id', userController.ChangeInfor);
-
-router.post('/cart/:id', userController.addCart);
-router.delete('/cart/:id', userController.deleteCart);
+router.post('/cart/:id', userController.addToCart);
+router.delete('/cart/:id', userController.removeFromCart);
 
 module.exports = router;
