@@ -206,7 +206,9 @@ class UserController {
       if (req.query.textSearch) {
         query.nameAccount = { $regex: req.query.textSearch, $options: 'i' };
       }
-      const users = await userModel.find(query).select('-password');
+      const users = await userModel
+        .find(query)
+        .select('-password -refreshCurrent');
       res.json(users);
     } catch (error) {
       console.error(error);
@@ -220,7 +222,7 @@ class UserController {
     try {
       const customers = await userModel
         .find({ role: 'CUSTOMER' })
-        .select('-password -cart');
+        .select('-password -cart -refreshCurrent');
       res.status(200).json(customers);
     } catch (error) {
       console.error(error);
@@ -239,7 +241,9 @@ class UserController {
       if (req.query.textSearch) {
         query.nameAccount = { $regex: req.query.textSearch, $options: 'i' };
       }
-      const staff = await userModel.find(query).select('-password -cart');
+      const staff = await userModel
+        .find(query)
+        .select('-password -cart -refreshCurrent');
       res.status(200).json(staff);
     } catch (error) {
       console.error(error);
