@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema({
   image: {
     type: String,
   },
+  refreshCurrent: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);

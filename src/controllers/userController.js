@@ -59,23 +59,27 @@ class UserController {
       }
 
       const accessToken = jwt.sign(
-        { userId: user._id },
+        { userId: user._id, nameAccount: user.nameAccount, type: 'access' },
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: '15m' }
       );
       const refreshToken = jwt.sign(
-        { userId: user._id },
+        { userId: user._id, nameAccount: user.nameAccount, type: 'refresh' },
         process.env.REFRESH_TOKEN_SECRET,
         { expiresIn: '7d' }
       );
 
-      const userWithoutPassword = user.toObject();
-      delete userWithoutPassword.password;
+      user.refreshCurrent = refreshToken;
+      await user.save();
+
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      delete userResponse.refreshCurrent;
 
       res.json({
         success: true,
         message: 'User logged in successfully',
-        user: userWithoutPassword,
+        user: userResponse,
         tokens: { access_token: accessToken, refresh_token: refreshToken },
       });
     } catch (error) {
@@ -83,6 +87,113 @@ class UserController {
       res
         .status(500)
         .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async refreshToken(req, res) {
+    const refreshToken = req.body.refresh_token;
+
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Refresh token is required' });
+    }
+
+    try {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+
+      if (decoded.type !== 'refresh') {
+        return res
+          .status(403)
+          .json({ success: false, message: 'Invalid token type' });
+      }
+
+      const user = await userModel.findById(decoded.userId);
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+
+      // Kiểm tra xem refresh token có khớp với token trong database không
+      if (user.refreshCurrent !== refreshToken) {
+        return res
+          .status(403)
+          .json({ success: false, message: 'Invalid refresh token' });
+      }
+
+      const newAccessToken = jwt.sign(
+        { userId: user._id, nameAccount: user.nameAccount, type: 'access' },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      const newRefreshToken = jwt.sign(
+        { userId: user._id, nameAccount: user.nameAccount, type: 'refresh' },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      user.refreshCurrent = newRefreshToken;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Token refreshed successfully',
+        tokens: {
+          access_token: newAccessToken,
+          refresh_token: newRefreshToken,
+        },
+      });
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      if (error.name === 'JsonWebTokenError') {
+        return res
+          .status(403)
+          .json({ success: false, message: 'Invalid refresh token' });
+      }
+      if (error.name === 'TokenExpiredError') {
+        return res
+          .status(403)
+          .json({ success: false, message: 'Refresh token expired' });
+      }
+      res
+        .status(500)
+        .json({ success: false, message: 'Internal server error' });
+    }
+  }
+
+  async logout(req, res) {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: 'Unauthorized: User ID not found' });
+      }
+
+      const user = await userModel.findById(userId);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: 'User not found' });
+      }
+      user.refreshCurrent = null;
+      await user.save();
+
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
     }
   }
 
