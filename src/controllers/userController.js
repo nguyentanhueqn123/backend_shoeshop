@@ -1,7 +1,14 @@
 const userModel = require('../models/user');
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 class UserController {
   async register(req, res) {
     const { email, password, nameAccount, phone, role } = req.body;
@@ -285,8 +292,18 @@ class UserController {
 
   async changeInfo(req, res) {
     const _id = req.params.id;
-    const { nameAccount, email, phone, image } = req.body;
+    const { nameAccount, email, phone } = req.body;
+    let image = req.body.image;
     try {
+      if (image) {
+        // Nếu image là base64 string
+        if (image.startsWith('data:image')) {
+          const uploadResponse = await cloudinary.uploader.upload(image, {
+            folder: process.env.CLOUDINARY_FOLDER,
+          });
+          image = uploadResponse.secure_url;
+        }
+      }
       const updatedUser = await userModel.findByIdAndUpdate(
         _id,
         { nameAccount, email, phone, image },
