@@ -52,37 +52,34 @@ class ProductController {
 
   //Ham lay du lieu tu database
   async getAllProduct(req, res, next) {
-    let query = req.query;
-    let querySort = [];
-
-    if (req.query.typeId) {
-      query.typeId = {
-        $in: req.query.typeId.split(','),
-      };
-    }
-
-    if (req.query.textSearch) {
-      query.nameProduct = {
-        $regex: req.query.textSearch,
-      };
-    }
-
-    if (req.query.orderBy && req.query.order) {
-      var orderBy, order;
-      orderBy = req.query.orderBy;
-      querySort.push(orderBy);
-      order = req.query.order === 'asc' ? 1 : -1;
-      querySort.push(order);
-    }
-
     try {
-      const product = await productSchema
+      const { typeId, textSearch, orderBy, order } = req.query;
+      let query = {};
+      let sort = {};
+
+      // Handle typeId filter
+      if (typeId) {
+        query.typeId = { $in: typeId.split(',') };
+      }
+
+      // Handle text search
+      if (textSearch) {
+        query.nameProduct = { $regex: textSearch, $options: 'i' };
+      }
+
+      // Handle sorting
+      if (orderBy && order) {
+        sort[orderBy] = order === 'asc' ? 1 : -1;
+      }
+
+      const products = await productSchema
         .find(query)
         .populate('typeId')
-        .sort([querySort]);
-      res.send(product);
+        .sort(sort);
+
+      res.json(products);
     } catch (err) {
-      res.send({ message: err.message });
+      next(err);
     }
   }
 
